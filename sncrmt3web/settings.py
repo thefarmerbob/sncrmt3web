@@ -15,6 +15,7 @@ import os
 import environ
 import dj_database_url 
 
+
 env = environ.Env()
 environ.Env.read_env('.env')
 
@@ -29,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-u7_#sjz^i#+m4zjq5p^nkt2wn6qv@y+(==ygc=7*irq1m86oi3'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
