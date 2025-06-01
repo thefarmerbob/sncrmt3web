@@ -30,7 +30,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-u7_#sjz^i#+m4zjq5p^nkt2wn6qv@y+(==ygc=7*irq1m86oi3'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
+RENDER = True
 
 ALLOWED_HOSTS = []
 
@@ -107,7 +108,7 @@ WSGI_APPLICATION = 'sncrmt3web.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if DEBUG:
+if not RENDER:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
@@ -166,7 +167,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-if not DEBUG:
+if RENDER:
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
