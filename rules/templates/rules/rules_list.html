@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">House Rules</h2>
+            
+            <!-- Chapter Filter Form -->
+            <form method="get" class="mb-4">
+                <div class="form-group">
+                    <label class="mb-2">Filter by Chapters:</label>
+                    <div class="d-flex flex-wrap gap-3">
+                        {% for chapter in chapters %}
+                            <div class="form-check">
+                                <input type="checkbox" 
+                                       name="chapters" 
+                                       value="{{ chapter.id }}" 
+                                       class="form-check-input" 
+                                       id="chapter_{{ chapter.id }}"
+                                       {% if chapter.id in selected_chapter_ids %}checked{% endif %}>
+                                <label class="form-check-label" for="chapter_{{ chapter.id }}">
+                                    {{ chapter.name }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Apply Filter</button>
+            </form>
+
+            {% if rules %}
+                <div class="list-group">
+                    {% for rule in rules %}
+                        <div class="list-group-item">
+                            <h5 class="mb-1">{{ rule.title }}</h5>
+                            <p class="mb-1">{{ rule.description }}</p>
+                            {% if rule.chapters.all %}
+                                <small class="text-muted">
+                                    Applies to: 
+                                    {% for chapter in rule.chapters.all %}
+                                        {{ chapter.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </small>
+                            {% else %}
+                                <small class="text-muted">Applies to all chapters</small>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No rules have been set yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

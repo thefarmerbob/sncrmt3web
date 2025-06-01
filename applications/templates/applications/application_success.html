@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Application Submitted Successfully{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-16 max-w-2xl text-center">
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <!-- Success Icon -->
+        <div class="mb-8">
+            <svg class="mx-auto h-16 w-16 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
+
+        <h1 class="text-3xl font-bold text-gray-900 mb-4">Application Submitted!</h1>
+        
+        <p class="text-lg text-gray-600 mb-8">
+            Thank you for completing your application. We will review it and get back to you soon.
+        </p>
+
+        <div class="space-y-4">
+            <p class="text-sm text-gray-500">
+                You will receive an email confirmation shortly.
+            </p>
+            <p class="text-sm text-gray-500">
+                You can track the status of your application in your dashboard.
+            </p>
+        </div>
+
+        <div class="mt-8">
+            <a href="{% url 'applications_list' %}" 
+               class="inline-block px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                View My Applications
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %} 

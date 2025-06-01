@@ -1,0 +1,41 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Available Chapters{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto p-6">
+    <h1 class="mb-6 text-3xl">Available Chapters</h1>
+    
+    {% if chapters %}
+        <form method="post" action=".">
+            {% csrf_token %}
+            <div class="space-y-4">
+                {% for chapter in chapters %}
+                    <div class="border p-4 rounded">
+                        <label class="flex items-center space-x-3">
+                            <input type="radio" name="chapter" value="{{ chapter.id }}" required>
+                            <div>
+                                <h3 class="font-bold">{{ chapter.name }}</h3>
+                                <p>{{ chapter.description }}</p>
+                            </div>
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4 space-x-4">
+                <a href="{% url 'new_application' %}" class="py-2 px-4 bg-gray-500 text-white rounded hover:bg-gray-600">
+                    Back
+                </a>
+                <button type="submit" class="py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    Continue
+                </button>
+            </div>
+        </form>
+    {% else %}
+        <p>No chapters are available for your selected dates.</p>
+        <a href="{% url 'applications' %}" class="mt-4 inline-block py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-600">
+            Choose Different Dates
+        </a>
+    {% endif %}
+</div>
+{% endblock %} 

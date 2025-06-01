@@ -1,0 +1,61 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Chapter Transfer Requests{% endblock %}
+
+{% block dashboard_content %}
+<div class="bg-white rounded-lg border border-gray-200 shadow-sm">
+    <div class="p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">My Chapter Transfer Requests</h1>
+            <a href="{% url 'chapter_transfers:create' %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                New Transfer Request
+            </a>
+        </div>
+
+
+
+        {% if requests %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Chapter</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested Chapter</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for request in requests %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ request.current_chapter.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ request.requested_chapter.name }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ request.requested_date }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if request.status == 'approved' %}bg-green-100 text-green-800
+                                {% elif request.status == 'rejected' %}bg-red-100 text-red-800
+                                {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                {{ request.status|title }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="{% url 'chapter_transfers:detail' request.pk %}" class="text-blue-600 hover:text-blue-900">View Details</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <p class="text-gray-500">You haven't made any chapter transfer requests yet.</p>
+            <a href="{% url 'chapter_transfers:create' %}" class="mt-4 inline-block text-blue-500 hover:text-blue-700">
+                Create your first transfer request
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

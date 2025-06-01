@@ -1,0 +1,17 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Application Step 2{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="flex space-x-4">
+        <button type="submit" name="save" class="bg-blue-500 text-white px-4 py-2 rounded-md">Save</button>
+        <button type="submit" name="submit" class="bg-green-500 text-white px-4 py-2 rounded-md" 
+                onclick="return confirm('Are you sure you want to submit? You won\'t be able to make changes after submission.')">
+            Submit Application
+        </button>
+    </div>
+</form>
+{% endblock %}

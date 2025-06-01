@@ -1,0 +1,615 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Edit Application{% endblock %}
+
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl font-bold mb-4">Edit Application</h1>
+
+
+
+        {% if form.non_field_errors %}
+        <div class="mb-6">
+            {% for error in form.non_field_errors %}
+                <div class="p-4 mb-4 rounded-xl bg-red-100 border border-red-400 text-red-700">
+                    {{ error|safe }}
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <form method="post" action="." class="space-y-4" id="applicationForm" data-minimum-days="{{ short_stay_message.minimum_days|default:28 }}" data-maximum-days="{{ short_stay_message.maximum_days|default:93 }}" onsubmit="return checkStayDuration(event)">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold">Personal Information</h2>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">{{ form.first_name.label }}</label>
+                        {{ form.first_name }}
+                        {{ form.first_name.errors }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">{{ form.last_name.label }}</label>
+                        {{ form.last_name }}
+                        {{ form.last_name.errors }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">{{ form.email.label }}</label>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold">Stay Details</h2>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">{{ form.date_join.label }}</label>
+                        {{ form.date_join }}
+                        {{ form.date_join.errors }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">{{ form.date_leave.label }}</label>
+                        {{ form.date_leave }}
+                        {{ form.date_leave.errors }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">{{ form.guests.label }}</label>
+                        {{ form.guests }}
+                        {{ form.guests.errors }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">{{ form.member_type.label }}</label>
+                        {{ form.member_type }}
+                        {{ form.member_type.errors }}
+                    </div>
+
+                    {# Check Availability Button #}
+                    <div class="mt-4">
+                                            <button type="submit" 
+                            name="check_availability" 
+                            class="py-2 px-4 bg-custom-orange text-white rounded-xl hover:bg-custom-orange-dark flex items-center transition-all duration-200">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Check Available Chapters
+                    </button>
+                    </div>
+                </div>
+            </div>
+
+            {# Short Stay Warning message container - initially hidden #}
+            <div id="stayWarningMessage" class="hidden my-6 w-full">
+                <div class="bg-custom-orange-lighter border-l-4 border-custom-orange p-4 rounded-lg shadow-sm">
+                    <div class="space-y-3">
+                        <div class="flex gap-3 items-start">
+                            <div class="flex-shrink-0 mt-1">
+                                <svg class="h-5 w-5 text-custom-orange" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="text-base font-medium text-gray-800">{{ short_stay_message.title }}</h3>
+                                <p class="text-sm text-gray-700 mt-1">
+                                    {{ short_stay_message.message }}
+                                </p>
+                                <div class="mt-4 flex items-center gap-3">
+                                    <button type="button" 
+                                            onclick="acknowledgeWarning()" 
+                                            class="px-4 py-2 text-gray-800 bg-custom-orange-lighter border border-custom-orange rounded-lg hover:bg-custom-orange-light focus:outline-none focus:ring-2 focus:ring-custom-orange transition-all duration-200 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>{{ short_stay_message.button_text }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Long Stay Warning message container - initially hidden #}
+            <div id="longStayWarningMessage" class="hidden my-6 w-full">
+                <div class="bg-custom-orange-lighter border-l-4 border-custom-orange p-4 rounded-lg shadow-sm">
+                    <div class="space-y-3">
+                        <div class="flex gap-3 items-start">
+                            <div class="flex-shrink-0 mt-1">
+                                <svg class="h-5 w-5 text-custom-orange" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div class="flex-grow">
+                                <h3 class="text-base font-medium text-gray-800">{{ short_stay_message.long_stay_title }}</h3>
+                                <p class="text-sm text-gray-700 mt-1">
+                                    {{ short_stay_message.long_stay_message }}
+                                </p>
+                                <div class="mt-4 flex items-center gap-3">
+                                    <button type="button" 
+                                            onclick="acknowledgeLongStayWarning()" 
+                                            class="px-4 py-2 text-gray-800 bg-custom-orange-lighter border border-custom-orange rounded-lg hover:bg-custom-orange-light focus:outline-none focus:ring-2 focus:ring-custom-orange transition-all duration-200 flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>{{ short_stay_message.long_stay_button_text }}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# Chapter Selection #}
+            <div class="mt-8">
+                {% if chapters_info %}
+                    <div id="chaptersUpdatedMessage" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                        ✓ Chapters updated based on your selected dates and preferences
+                    </div>
+                {% endif %}
+                <div class="flex items-center space-x-2 mb-4">
+                    <h2 class="text-xl font-semibold">Chapter Selection</h2>
+                    <!-- Info Button -->
+                    <button type="button" 
+                            onclick="showPricingInfo()"
+                            class="text-green-800 hover:text-green-700 focus:outline-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Pricing Info Modal -->
+                <div id="pricingInfoModal" class="hidden">
+                    <div class="bg-custom-orange-lighter border-l-4 border-custom-orange p-4 rounded-lg shadow-sm">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-grow space-y-3">
+                                <h3 class="text-base font-medium text-gray-800">{{ pricing_settings.title }}</h3>
+                                <div class="space-y-2 text-sm text-gray-700">
+                                    <div>
+                                        <span class="font-medium">Base Price:</span> 
+                                        {{ pricing_settings.base_price }}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Member Type Discount:</span> 
+                                        {{ pricing_settings.member_discount }}
+                                    </div>
+                                    <div>
+                                        <span class="font-medium">Number of Guests:</span> 
+                                        {{ pricing_settings.guest_increase }}
+                                    </div>
+                                    <p class="text-sm italic mt-2">
+                                        {{ pricing_settings.note }}
+                                    </p>
+                                    <div class="mt-4">
+                                        <button onclick="hidePricingInfo()" 
+                                                class="text-sm font-medium text-gray-700 hover:text-gray-800 focus:outline-none transition-colors duration-200">
+                                            Got it
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-shrink-0">
+                                <button onclick="hidePricingInfo()" 
+                                        class="text-gray-400 hover:text-gray-500">
+                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if chapters_info %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for chapter_info in chapters_info %}
+                            <div class="border rounded-xl transition-all duration-300 ease-in-out group relative z-10 hover:z-20 bg-white overflow-hidden {% if not chapter_info.is_available %}opacity-60{% endif %} hover:shadow-2xl transform hover:-translate-y-1 hover:border-custom-orange">
+                                <input type="radio" 
+                                       name="chapter" 
+                                       value="{{ chapter_info.chapter.id }}" 
+                                       {% if not chapter_info.is_available %}disabled{% endif %}
+                                       {% if application.chapter_id == chapter_info.chapter.id %}checked{% endif %}
+                                       class="hidden peer" 
+                                       id="chapter_{{ chapter_info.chapter.id }}">
+                                <label for="chapter_{{ chapter_info.chapter.id }}" class="cursor-pointer block {% if not chapter_info.is_available %}cursor-not-allowed{% endif %}">
+                                    {% if chapter_info.images %}
+                                        <div class="h-56 carousel relative" data-chapter="{{ chapter_info.chapter.id }}">
+                                            <div class="carousel-inner h-full">
+                                                {% for image in chapter_info.images %}
+                                                    <div class="carousel-item h-full w-full">
+                                                        <img src="{{ image.image.url }}" 
+                                                             alt="{{ chapter_info.chapter.name }}"
+                                                             class="w-full h-full object-cover">
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                            {% if chapter_info.images.count > 1 %}
+                                                <div class="carousel-nav">
+                                                    {% for image in chapter_info.images %}
+                                                        <div class="carousel-dot {% if forloop.first %}active{% endif %}"></div>
+                                                    {% endfor %}
+                                                </div>
+                                                <button class="carousel-arrow carousel-prev" type="button">❮</button>
+                                                <button class="carousel-arrow carousel-next" type="button">❯</button>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="h-56 bg-gray-100 flex items-center justify-center">
+                                            <span class="text-gray-400">No images available</span>
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="p-6">
+                                        <div class="flex-grow">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <h3 class="font-semibold text-xl text-gray-900">
+                                                    {{ chapter_info.chapter.name }}
+                                                </h3>
+                                                {% if not chapter_info.is_available %}
+                                                    <span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-medium whitespace-nowrap text-ellipsis overflow-hidden min-w-[90px] text-center">Not Available</span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="mt-4 p-4 bg-custom-orange-lighter rounded-xl space-y-2">
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-gray-600">Rate per night</span>
+                                                    <span class="font-semibold text-green-800">₩{{ chapter_info.nightly_rate|floatformat:2 }}</span>
+                                                </div>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-gray-600">Duration</span>
+                                                    <span class="font-medium text-gray-900">{{ chapter_info.nights }} nights</span>
+                                                </div>
+                                                <div class="border-t border-custom-orange-light pt-2 mt-2">
+                                                    <div class="flex justify-between items-center">
+                                                        <span class="font-medium text-gray-900">Total cost</span>
+                                                        <span class="font-bold text-green-800">₩{{ chapter_info.total_cost|floatformat:2 }}</span>
+                                                    </div>
+                                                    {% if chapter_info.per_guest_cost %}
+                                                        <div class="text-sm text-gray-500 mt-1 text-right">
+                                                            (₩{{ chapter_info.per_guest_cost|floatformat:2 }} per guest)
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            {% if chapter_info.chapter.amenities %}
+                                            <div class="mt-4 flex flex-wrap gap-2">
+                                                {% for amenity in chapter_info.chapter.amenities %}
+                                                    <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                                                        {{ amenity }}
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                            
+                                            {% if chapter_info.chapter.description %}
+                                            <div class="mt-4 relative">
+                                                <div class="text-green-800 text-sm cursor-pointer hover:text-green-700 transition-colors duration-200">
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        View Details
+                                                    </span>
+                                                </div>
+                                                <div class="absolute left-0 right-0 bottom-full mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-30">
+                                                    <div class="bg-white rounded-xl shadow-lg p-4 border border-gray-200">
+                                                        <div class="prose prose-sm max-w-none text-gray-600 {% if chapter_info.chapter.description_text_size == 'xs' %}text-xs{% elif chapter_info.chapter.description_text_size == 'sm' %}text-sm{% elif chapter_info.chapter.description_text_size == 'base' %}text-base{% elif chapter_info.chapter.description_text_size == 'lg' %}text-lg{% elif chapter_info.chapter.description_text_size == 'xl' %}text-xl{% endif %}">
+                                                            {{ chapter_info.chapter.description|linebreaks }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    {# Selection Indicator #}
+                                    <div class="absolute inset-0 border-2 border-green-500 rounded-xl opacity-0 peer-checked:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% elif dates_selected %}
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                        <p class="text-yellow-800">No chapters are currently available for the selected dates. Please try different dates.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="flex space-x-4 mt-6">
+                {% if chapters_info %}
+                    <button type="submit" 
+                            name="action" 
+                            value="continue_to_questions" 
+                            class="py-2 px-4 bg-custom-orange text-white rounded-xl hover:bg-custom-orange-dark disabled:opacity-50 disabled:cursor-not-allowed"
+                            id="continueButton"
+                            disabled>
+                        Continue to Questions
+                    </button>
+                {% endif %}
+                <a href="{% url 'applications_list' %}" class="py-2 px-4 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+{% block extra_head %}
+<style>
+    /* Custom color definitions */
+    :root {
+        --orange-primary: #FFB649;
+        --orange-dark: #F5A832;    /* Darker for hover */
+        --orange-light: #FFE4B8;   /* Light background */
+        --orange-lighter: #FFF4E2; /* Very light background */
+        --green-text: #166534;     /* green-800 for text */
+    }
+
+    /* Custom color classes */
+    .bg-custom-orange {
+        background-color: var(--orange-primary);
+    }
+    .bg-custom-orange-light {
+        background-color: var(--orange-light);
+    }
+    .bg-custom-orange-lighter {
+        background-color: var(--orange-lighter);
+    }
+    .hover\:bg-custom-orange-dark:hover {
+        background-color: var(--orange-dark);
+    }
+    .text-custom-orange {
+        color: var(--green-text);  /* Changed to green */
+    }
+    .text-custom-orange-dark {
+        color: var(--green-text);  /* Changed to green */
+    }
+    .hover\:text-custom-orange-dark:hover {
+        color: var(--green-text);  /* Changed to green */
+    }
+    .border-custom-orange {
+        border-color: var(--orange-primary);
+    }
+    .border-custom-orange-light {
+        border-color: var(--orange-light);
+    }
+    .text-custom-orange {
+        color: var(--orange-primary);
+    }
+    .hover\:bg-custom-orange-light:hover {
+        background-color: var(--orange-light);
+    }
+    .focus\:ring-custom-orange:focus {
+        --tw-ring-color: rgba(255, 182, 73, 0.5);
+    }
+    .disabled\:opacity-50:disabled {
+        opacity: 0.5;
+    }
+    .disabled\:cursor-not-allowed:disabled {
+        cursor: not-allowed;
+    }
+
+    /* Carousel styles */
+    .carousel {
+        position: relative;
+        overflow: hidden;
+    }
+    .carousel-inner {
+        display: flex;
+        transition: transform 0.3s ease-in-out;
+    }
+    .carousel-item {
+        flex: 0 0 100%;
+    }
+    .carousel-nav {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 20;
+    }
+    .carousel-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .carousel-dot.active {
+        background-color: white;
+        transform: scale(1.2);
+    }
+    .carousel-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 40px;
+        height: 40px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 20;
+        transition: all 0.3s ease;
+        border: none;
+        font-size: 1.2rem;
+        opacity: 0;
+    }
+    .carousel:hover .carousel-arrow {
+        opacity: 1;
+    }
+    .carousel-arrow:hover {
+        background-color: white;
+        transform: translateY(-50%) scale(1.1);
+    }
+    .carousel-prev {
+        left: 10px;
+    }
+    .carousel-next {
+        right: 10px;
+    }
+
+    /* Smooth height transition for description */
+    .prose {
+        padding: 1rem;
+        background: rgba(243, 244, 246, 0.5);
+        border-radius: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    /* Selection styles */
+    .peer:checked + label {
+        background-color: rgba(34, 197, 94, 0.05);  /* green-600 with low opacity */
+    }
+
+    /* Update modal display handling */
+    #pricingInfoModal {
+        position: static;
+        background: none;
+    }
+    
+    #pricingInfoModal.hidden {
+        display: none;
+    }
+    
+    #pricingInfoModal:not(.hidden) {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function checkStayDuration(event) {
+    const dateJoin = new Date(document.querySelector('input[name="date_join"]').value);
+    const dateLeave = new Date(document.querySelector('input[name="date_leave"]').value);
+    
+    if (dateJoin && dateLeave) {
+        const daysDifference = (dateLeave - dateJoin) / (1000 * 60 * 60 * 24);
+        const minimumDays = parseInt(document.getElementById('applicationForm').getAttribute('data-minimum-days')) || 28;
+        const maximumDays = parseInt(document.getElementById('applicationForm').getAttribute('data-maximum-days')) || 93;
+        
+        if (daysDifference < minimumDays) {
+            // Show short stay warning but don't prevent form submission
+            document.getElementById('stayWarningMessage').classList.remove('hidden');
+            document.getElementById('longStayWarningMessage').classList.add('hidden'); // Hide long stay warning if visible
+        } else if (daysDifference > maximumDays) {
+            // Show long stay warning and prevent form submission
+            document.getElementById('longStayWarningMessage').classList.remove('hidden');
+            document.getElementById('stayWarningMessage').classList.add('hidden'); // Hide short stay warning if visible
+            
+            // Prevent form submission for stays over 93 days
+            event.preventDefault();
+            return false;
+        } else {
+            // Hide both warnings if stay duration is within bounds
+            document.getElementById('stayWarningMessage').classList.add('hidden');
+            document.getElementById('longStayWarningMessage').classList.add('hidden');
+        }
+    }
+    return true;  // Allow form submission for valid durations
+}
+
+function acknowledgeWarning() {
+    document.getElementById('stayWarningMessage').classList.add('hidden');
+}
+
+function acknowledgeLongStayWarning() {
+    document.getElementById('longStayWarningMessage').classList.add('hidden');
+}
+
+// Auto-hide success message and add date change listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide the chapters updated message after 4 seconds
+    const updatedMessage = document.getElementById('chaptersUpdatedMessage');
+    if (updatedMessage) {
+        setTimeout(function() {
+            updatedMessage.style.transition = 'opacity 0.5s ease-out';
+            updatedMessage.style.opacity = '0';
+            setTimeout(function() {
+                updatedMessage.style.display = 'none';
+            }, 500);
+        }, 4000);
+    }
+    
+    // Remove automatic date change listeners - warnings will only show on form submission
+    // const dateJoinField = document.querySelector('input[name="date_join"]');
+    // const dateLeaveField = document.querySelector('input[name="date_leave"]');
+    
+    // function updateWarnings() {
+    //     const dateJoin = new Date(dateJoinField.value);
+    //     const dateLeave = new Date(dateLeaveField.value);
+    //     
+    //     if (dateJoin && dateLeave && dateJoinField.value && dateLeaveField.value) {
+    //         const daysDifference = (dateLeave - dateJoin) / (1000 * 60 * 60 * 24);
+    //         const minimumDays = parseInt(document.getElementById('applicationForm').getAttribute('data-minimum-days')) || 28;
+    //         const maximumDays = parseInt(document.getElementById('applicationForm').getAttribute('data-maximum-days')) || 93;
+    //         
+    //         if (daysDifference < minimumDays) {
+    //             document.getElementById('stayWarningMessage').classList.remove('hidden');
+    //             document.getElementById('longStayWarningMessage').classList.add('hidden');
+    //         } else if (daysDifference > maximumDays) {
+    //             document.getElementById('longStayWarningMessage').classList.remove('hidden');
+    //             document.getElementById('stayWarningMessage').classList.add('hidden');
+    //         } else {
+    //             document.getElementById('stayWarningMessage').classList.add('hidden');
+    //             document.getElementById('longStayWarningMessage').classList.add('hidden');
+    //         }
+    //     }
+    // }
+    
+    // if (dateJoinField) dateJoinField.addEventListener('change', updateWarnings);
+    // if (dateLeaveField) dateLeaveField.addEventListener('change', updateWarnings);
+    
+    // Check on page load if dates are already filled
+    // updateWarnings();
+});
+
+function showPricingInfo() {
+    document.getElementById('pricingInfoModal').classList.remove('hidden');
+}
+
+function hidePricingInfo() {
+    document.getElementById('pricingInfoModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('pricingInfoModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hidePricingInfo();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('pricingInfoModal').classList.contains('hidden')) {
+        hidePricingInfo();
+    }
+});
+
+// Enable continue button when a chapter is selected
+document.querySelectorAll('input[name="chapter"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('continueButton').disabled = false;
+    });
+});
+</script>
+{% endblock %}
+
+<style>
+    /* Add this to your CSS to ensure the floating description appears above other elements */
+    .group:hover {
+        z-index: 20;
+    }
+    .group {
+        z-index: 10;
+    }
+</style>
+{% endblock %}

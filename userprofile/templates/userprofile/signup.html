@@ -1,0 +1,96 @@
+{% extends "core/base.html" %}
+
+{% block title %}Sign up{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center">
+    <div class="w-full max-w-md">
+        <!-- Card Container -->
+        <div class="bg-white rounded-2xl shadow-lg p-8">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">Create Account</h1>
+                <p class="text-gray-600 mt-2">Join our community today</p>
+            </div>
+
+
+
+            <!-- Sign Up Form -->
+            <form method="post" action="." class="space-y-6">
+                {% csrf_token %}
+
+                {% for field in form %}
+                <div class="space-y-2">
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {{ field.label }}
+                    </label>
+                    <div class="relative rounded-xl shadow-sm">
+                        {{ field }}
+                        {% if field.errors %}
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if field.errors %}
+                        {% for error in field.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                    {% if field.help_text %}
+                        <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="w-full py-3 px-4 border border-transparent rounded-xl shadow-sm text-white bg-custom-orange hover:bg-custom-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors duration-200">
+                    Create Account
+                </button>
+            </form>
+
+            <!-- Login Link -->
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-600">
+                    Already have an account? 
+                    <a href="{% url 'login' %}" class="font-medium text-custom-orange hover:text-orange-700">Sign in here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_head %}
+<style>
+    /* Custom color definitions */
+    :root {
+        --orange-primary: #FFB649;
+        --orange-dark: #F5A832;
+    }
+
+    .bg-custom-orange {
+        background-color: var(--orange-primary);
+    }
+    .hover\:bg-custom-orange-dark:hover {
+        background-color: var(--orange-dark);
+    }
+    .text-custom-orange {
+        color: var(--orange-primary);
+    }
+
+    /* Form field styles */
+    input[type="text"],
+    input[type="password"],
+    input[type="email"] {
+        @apply w-full rounded-xl border-gray-300 focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50 transition-colors duration-200;
+        padding: 0.75rem 1rem;
+    }
+
+    input[type="checkbox"] {
+        @apply rounded border-gray-300 text-custom-orange focus:ring-orange-500;
+    }
+</style>
+{% endblock %}
+
+{% endblock %}

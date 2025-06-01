@@ -1,0 +1,58 @@
+{% extends "core/base.html" %}
+
+{% block title %}My Applications{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 my-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl text-green-900 font-['EB_Garamond']">My Applications</h1>
+        <a href="{% url 'applications' %}" class="px-4 py-1.5 bg-[#FFB649] hover:bg-[#FFA635] text-green-900 rounded-lg transition duration-300 text-sm">
+            New Application
+        </a>
+    </div>
+
+    {% if applications %}
+        <div class="space-y-3">
+            {% for application in applications %}
+                <div class="bg-white rounded-lg shadow-sm p-4 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg text-green-900 font-['EB_Garamond']">{{ application.first_name }} {{ application.last_name }}</h2>
+                        <div class="text-sm text-gray-600 space-y-0.5">
+                            <p>{{ application.get_application_status_display }}</p>
+                            {% if application.date_join and application.date_leave %}
+                                <p>{{ application.date_join|date:"M d, Y" }} - {{ application.date_leave|date:"M d, Y" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        {% if application.status != 'Withdrawn' %}
+                            {% if application.is_editable %}
+                                <a href="{% url 'application_edit' application.pk %}" 
+                                   class="px-3 py-1 bg-[#FFB649] text-green-900 rounded hover:bg-[#FFA635] transition duration-300 text-sm">
+                                    Edit
+                                </a>
+                            {% else %}
+                                <a href="{% url 'application_detail' application.pk %}" 
+                                   class="px-3 py-1 bg-green-900 text-[#FFB649] rounded hover:bg-green-800 transition duration-300 text-sm">
+                                    View
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'withdraw_application' application.pk %}" 
+                               class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition duration-300 text-sm">
+                                Withdraw
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-8">
+            <p class="text-gray-600 mb-3 text-sm">You haven't created any applications yet.</p>
+            <a href="{% url 'applications' %}" class="px-4 py-1.5 bg-[#FFB649] hover:bg-[#FFA635] text-green-900 rounded-lg transition duration-300 text-sm inline-block">
+                Create Your First Application
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

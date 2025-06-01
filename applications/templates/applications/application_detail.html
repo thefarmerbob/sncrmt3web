@@ -1,0 +1,121 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Application Detail{% endblock %}
+
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+
+
+        <div class="flex justify-end mb-6">
+            <span class="px-4 py-1.5 rounded-full text-sm font-medium inline-block
+                {% if application.status == 'Submitted' or application.status == 'submitted' %}
+                    bg-green-900 text-[#FFB649]
+                {% else %}
+                    bg-green-800 text-[#FFB649]
+                {% endif %}">
+                {{ application.get_status_display }}
+            </span>
+        </div>
+
+        <div class="bg-[#fff9f0] rounded-xl p-8 shadow-lg">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h2 class="text-2xl text-green-900 font-['EB_Garamond'] mb-6">Personal Information</h2>
+                    <div class="space-y-4 bg-white rounded-lg p-6 shadow-sm">
+                        <p class="font-['EB_Garamond']"><span class="text-green-800 font-medium">Name:</span> {{ application.first_name }} {{ application.last_name }}</p>
+                        <p class="font-['EB_Garamond']"><span class="text-green-800 font-medium">Email:</span> {{ application.email }}</p>
+                        <p class="font-['EB_Garamond']"><span class="text-green-800 font-medium">Member Type:</span> {{ application.get_member_type_display }}</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl text-green-900 font-['EB_Garamond'] mb-6">Stay Details</h2>
+                    <div class="space-y-4 bg-white rounded-lg p-6 shadow-sm">
+                        <p class="font-['EB_Garamond']"><span class="text-green-800 font-medium">Arrival Date:</span> {{ application.date_join }}</p>
+                        <p class="font-['EB_Garamond']"><span class="text-green-800 font-medium">Departure Date:</span> {{ application.date_leave }}</p>
+                        <p class="font-['EB_Garamond']"><span class="text-green-800 font-medium">Number of Guests:</span> {{ application.get_guests_display }}</p>
+                    </div>
+                </div>
+
+                {% if application.chapter %}
+                <div class="col-span-2">
+                    <h2 class="text-2xl text-green-900 font-['EB_Garamond'] mb-6">Selected Chapter</h2>
+                    <div class="bg-white rounded-xl p-6 shadow-sm group">
+                        <div class="flex-grow">
+                            <h3 class="font-['EB_Garamond'] text-xl text-green-900">{{ application.chapter.name }}</h3>
+                            
+                            <div class="overflow-hidden max-h-0 group-hover:max-h-10000 transition-all duration-300 ease-in-out">
+                                <div class="mt-4 bg-[#fff9f0] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <pre class="text-green-800 p-4 whitespace-pre-wrap font-['EB_Garamond']">{{ application.chapter.description }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-8">
+                <h2 class="text-2xl text-green-900 font-['EB_Garamond'] mb-6">Application Questions</h2>
+                
+                {% for answer in application.answers.all %}
+                    {% if answer.answer and answer.question.question_type != 'information' %}
+                        <div x-data="{ open: false }" class="mb-4">
+                            <button 
+                                @click="open = !open" 
+                                class="w-full bg-white rounded-lg px-6 py-4 flex justify-between items-center hover:bg-[#fff5e6] transition-colors duration-300 shadow-sm"
+                            >
+                                <h3 class="font-['EB_Garamond'] text-lg text-green-900 font-bold">{{ answer.question.text }}</h3>
+                                <svg 
+                                    :class="{'rotate-180': open}"
+                                    class="w-5 h-5 transform transition-transform duration-300" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            
+                            <div 
+                                x-show="open" 
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="opacity-0 transform -translate-y-2"
+                                x-transition:enter-end="opacity-100 transform translate-y-0"
+                                x-transition:leave="transition ease-in duration-200"
+                                x-transition:leave-start="opacity-100 transform translate-y-0"
+                                x-transition:leave-end="opacity-0 transform -translate-y-2"
+                                class="mt-2 bg-white rounded-lg px-6 py-4 shadow-sm"
+                            >
+                                <p class="whitespace-pre-wrap font-['EB_Garamond'] text-green-900 leading-relaxed font-light">{{ answer.answer }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="text-center text-green-700 italic font-['EB_Garamond']">
+                        No answers provided yet.
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-8 flex justify-end space-x-4">
+                {% if application.is_editable %}
+                    <a href="{% url 'application_edit' application.id %}" 
+                       class="py-3 px-6 bg-green-900 text-[#FFB649] rounded-lg hover:bg-green-800 transition duration-300 shadow-md font-['EB_Garamond'] text-lg">
+                        Edit Application
+                    </a>
+                {% endif %}
+                {% if application.status != 'Withdrawn' %}
+                    <a href="{% url 'withdraw_application' application.id %}" 
+                       class="py-3 px-6 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300 shadow-md font-['EB_Garamond'] text-lg">
+                        Withdraw Application
+                    </a>
+                {% endif %}
+                <a href="{% url 'applications_list' %}" 
+                   class="py-3 px-6 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition duration-300 shadow-md font-['EB_Garamond'] text-lg">
+                    Back to Applications
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

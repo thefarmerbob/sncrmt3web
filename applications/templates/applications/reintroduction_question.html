@@ -1,0 +1,163 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Reintroduction - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-3xl">
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ settings.title }}</h1>
+            <p class="text-lg text-gray-600">{{ settings.subtitle }}</p>
+        </div>
+
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-custom-orange-lighter rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-custom-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h2m-2-4h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2V6a2 2 0 012-2z"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">{{ settings.question_text }}</h2>
+            <p class="text-gray-600 mb-6">
+                {{ settings.description }}
+            </p>
+        </div>
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="space-y-4">
+                <div class="flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-custom-orange transition-colors cursor-pointer">
+                    <input type="radio" id="yes" name="wants_reintroduction" value="yes" class="h-4 w-4 text-custom-orange focus:ring-custom-orange border-gray-300">
+                    <label for="yes" class="ml-3 flex-1 cursor-pointer">
+                        <div class="font-medium text-gray-900">{{ settings.yes_option_title }}</div>
+                        <div class="text-sm text-gray-500">{{ settings.yes_option_description }}</div>
+                    </label>
+                </div>
+                
+                <div class="flex items-center p-4 border-2 border-gray-200 rounded-xl hover:border-custom-orange transition-colors cursor-pointer">
+                    <input type="radio" id="no" name="wants_reintroduction" value="no" class="h-4 w-4 text-custom-orange focus:ring-custom-orange border-gray-300">
+                    <label for="no" class="ml-3 flex-1 cursor-pointer">
+                        <div class="font-medium text-gray-900">{{ settings.no_option_title }}</div>
+                        <div class="text-sm text-gray-500">{{ settings.no_option_description }}</div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-6">
+                <button type="submit" name="action" value="back_to_chapter" class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-orange transition-all duration-200">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Previous
+                </button>
+                
+                <button type="submit" id="continueButton" class="bg-custom-orange hover:bg-custom-orange-dark text-white font-medium py-3 px-8 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-custom-orange focus:ring-offset-2">
+                    <span id="buttonText">Continue</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Application Info -->
+    <div class="mt-6 text-center text-sm text-gray-500">
+        <p>Application for {{ application.first_name }} {{ application.last_name }}</p>
+        <p>{{ application.chapter.name }} • {{ application.date_join }} to {{ application.date_leave }}</p>
+    </div>
+</div>
+
+{% block extra_head %}
+<style>
+    /* Custom color definitions */
+    :root {
+        --orange-primary: #FFB649;
+        --orange-dark: #F5A832;    /* Darker for hover */
+        --orange-light: #FFE4B8;   /* Light background */
+        --orange-lighter: #FFF4E2; /* Very light background */
+    }
+
+    /* Custom color classes */
+    .bg-custom-orange {
+        background-color: var(--orange-primary);
+    }
+    .bg-custom-orange-light {
+        background-color: var(--orange-light);
+    }
+    .bg-custom-orange-lighter {
+        background-color: var(--orange-lighter);
+    }
+    .hover\:bg-custom-orange-dark:hover {
+        background-color: var(--orange-dark);
+    }
+    .text-custom-orange {
+        color: var(--orange-primary);
+    }
+    .border-custom-orange {
+        border-color: var(--orange-primary);
+    }
+    .hover\:border-custom-orange:hover {
+        border-color: var(--orange-primary);
+    }
+    .focus\:ring-custom-orange:focus {
+        --tw-ring-color: rgba(255, 182, 73, 0.5);
+    }
+    
+    /* Smooth transitions */
+    .transition-all {
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 200ms;
+    }
+    
+    /* Radio button styling */
+    input[type="radio"]:checked {
+        background-color: var(--orange-primary);
+        border-color: var(--orange-primary);
+    }
+</style>
+{% endblock %}
+
+<script>
+// Add click handlers to make the entire card clickable
+document.querySelectorAll('.cursor-pointer').forEach(card => {
+    card.addEventListener('click', function() {
+        const radio = this.querySelector('input[type="radio"]');
+        radio.checked = true;
+        
+        // Remove selected styling from all cards
+        document.querySelectorAll('.cursor-pointer').forEach(c => {
+            c.classList.remove('border-custom-orange', 'bg-custom-orange-lighter');
+            c.classList.add('border-gray-200');
+        });
+        
+        // Add selected styling to clicked card
+        this.classList.remove('border-gray-200');
+        this.classList.add('border-custom-orange', 'bg-custom-orange-lighter');
+        
+        // Update button text based on selection
+        updateButtonText();
+    });
+});
+
+// Add change listeners to radio buttons
+document.querySelectorAll('input[name="wants_reintroduction"]').forEach(radio => {
+    radio.addEventListener('change', updateButtonText);
+});
+
+// Function to update button text based on selection
+function updateButtonText() {
+    const selectedValue = document.querySelector('input[name="wants_reintroduction"]:checked')?.value;
+    const buttonText = document.getElementById('buttonText');
+    
+    if (selectedValue === 'no') {
+        buttonText.textContent = 'Submit Application';
+    } else if (selectedValue === 'yes') {
+        buttonText.textContent = 'Continue to Reintroduction';
+    } else {
+        buttonText.textContent = 'Continue';
+    }
+}
+
+
+</script>
+{% endblock %} 

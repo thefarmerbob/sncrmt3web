@@ -1,0 +1,55 @@
+{% extends 'core/base.html' %}
+{% load tailwind_filters %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-[#FFB649]">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl text-green-900 font-['EB_Garamond']">Maintenance Request Details</h3>
+                    <span class="px-3 py-1 rounded-full text-sm
+                        {% if maintenance_request.status == 'completed' %}bg-green-100 text-green-800
+                        {% else %}bg-blue-100 text-blue-800{% endif %}">
+                        {{ maintenance_request.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="p-6">
+                <h4 class="text-xl text-green-900 mb-2">{{ maintenance_request.title }}</h4>
+                <p class="text-gray-600 text-sm mb-6">
+                    Submitted by {{ maintenance_request.created_by.get_full_name|default:maintenance_request.created_by.username }}
+                    on {{ maintenance_request.created_at|date:"M d, Y" }}
+                </p>
+                <div class="mb-6">
+                    <h5 class="text-lg text-green-900 mb-2">Description</h5>
+                    <p class="text-gray-700 whitespace-pre-line">{{ maintenance_request.description }}</p>
+                </div>
+
+                {% if maintenance_request.manager_notes and request.user.is_staff %}
+                <div class="mb-6">
+                    <h5 class="text-lg text-green-900 mb-2">Manager Notes</h5>
+                    <p class="text-gray-700 whitespace-pre-line">{{ maintenance_request.manager_notes }}</p>
+                </div>
+                {% endif %}
+
+                <div class="bg-gray-50 p-4 rounded-lg mb-6">
+                    <div class="mb-2 text-sm text-gray-700">
+                        {{ confirmation_text }}
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <svg class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                        <span class="text-gray-700">Confirmed</span>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <a href="{% url 'dashboard:dashboard' %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition duration-300">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

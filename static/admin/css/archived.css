@@ -1,0 +1,29 @@
+#content h1 {
+    color: #666;
+}
+
+/* Style to indicate archived status */
+.field-status .archived {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Slightly muted appearance for archived items */
+#result_list tbody tr {
+    opacity: 0.9;
+    background-color: #f8f9fa;
+}
+
+#result_list tbody tr:hover {
+    opacity: 1;
+    background-color: #fff;
+}
+
+/* Custom header for archived section */
+.dashboard-title-archived {
+    color: #6c757d;
+    font-style: italic;
+} 

@@ -1,0 +1,49 @@
+{% if overdue_payments or upcoming_payments %}
+<div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+    <h2 class="text-2xl mb-6 text-green-900 font-['EB_Garamond']">Pending Payments</h2>
+    
+    {% if overdue_payments %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <h6 class="text-xl text-red-800 mb-4">Overdue Payments</h6>
+        {% for payment in overdue_payments %}
+        <div class="mb-4 last:mb-0">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-lg font-semibold text-red-800">₩{{ payment.amount }}</span>
+                    <span class="text-red-700"> - {{ payment.description }}</span>
+                    <br>
+                    <span class="text-sm text-red-600">Due date: {{ payment.due_date }}</span>
+                </div>
+                <a href="{{ payment.get_absolute_url }}" 
+                   class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300">
+                    Upload Proof
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if upcoming_payments %}
+    <div class="bg-[#fff9f0] rounded-lg p-4">
+        <h6 class="text-xl text-green-900 mb-4">Upcoming Payments</h6>
+        {% for payment in upcoming_payments %}
+        <div class="mb-4 last:mb-0">
+            <div class="flex justify-between items-center">
+                <div>
+                    <span class="text-lg font-semibold text-green-900">₩{{ payment.amount }}</span>
+                    <span class="text-green-800"> - {{ payment.description }}</span>
+                    <br>
+                    <span class="text-sm text-green-700">Due date: {{ payment.due_date }}</span>
+                </div>
+                <a href="{{ payment.get_absolute_url }}" 
+                   class="px-4 py-2 bg-[#FFB649] text-green-900 rounded-lg hover:bg-[#FFA635] transition duration-300">
+                    Upload Proof
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %} 

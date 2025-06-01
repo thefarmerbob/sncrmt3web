@@ -1,0 +1,114 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Transfer Request Details{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl shadow-lg">
+        <div class="p-8">
+            <div class="mb-8 flex justify-between items-center">
+                <h1 class="text-3xl text-green-900 font-['EB_Garamond']">Transfer Request Details</h1>
+                <a href="{% url 'dashboard:dashboard' %}" class="text-[#FFB649] hover:text-[#FFA635] transition duration-300">
+                    Back to Dashboard
+                </a>
+            </div>
+
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-gray-50">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">
+                        Request Information
+                    </h3>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                        Details about your chapter transfer request
+                    </p>
+                </div>
+                <div class="border-t border-gray-200">
+                    <dl>
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Status
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                    {% if transfer_request.status == 'approved' %}bg-green-100 text-green-800
+                                    {% elif transfer_request.status == 'rejected' %}bg-red-100 text-red-800
+                                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                    {{ transfer_request.status|title }}
+                                </span>
+                            </dd>
+                        </div>
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-gray-50">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Current Chapter
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ transfer_request.current_chapter.name }}
+                            </dd>
+                        </div>
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Requested Chapter
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ transfer_request.requested_chapter.name }}
+                            </dd>
+                        </div>
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-gray-50">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Start Date at New Room
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ transfer_request.end_date|date:"F j, Y" }}
+                            </dd>
+                        </div>
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">
+                                End Date at New Room
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ transfer_request.start_date|date:"F j, Y" }}
+                            </dd>
+                        </div>
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-gray-50">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Reason
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ transfer_request.reason }}
+                            </dd>
+                        </div>
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Acknowledgment
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if transfer_request.acknowledgment %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                    {% if transfer_request.acknowledgment %}Acknowledged{% else %}Not Acknowledged{% endif %}
+                                </span>
+                            </dd>
+                        </div>
+                        {% if transfer_request.admin_notes %}
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 bg-gray-50">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Admin Notes
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2 whitespace-pre-wrap">
+                                {{ transfer_request.admin_notes }}
+                            </dd>
+                        </div>
+                        {% endif %}
+                        <div class="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 {% if not transfer_request.admin_notes %}bg-gray-50{% endif %}">
+                            <dt class="text-sm font-medium text-gray-500">
+                                Request Date
+                            </dt>
+                            <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                {{ transfer_request.created_at|date:"F j, Y, P" }}
+                            </dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

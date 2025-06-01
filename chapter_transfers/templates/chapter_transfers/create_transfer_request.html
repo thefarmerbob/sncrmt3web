@@ -1,0 +1,91 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Create Chapter Transfer Request{% endblock %}
+
+{% block dashboard_content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl shadow-lg">
+        <div class="p-8">
+            <h1 class="text-3xl text-green-900 font-['EB_Garamond'] mb-8">Request Chapter Transfer</h1>
+
+
+
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-lg text-green-900 mb-2 font-['EB_Garamond']">
+                        Current Chapter
+                    </label>
+                    <div class="mt-1 block w-full px-4 py-3 text-green-900 bg-gray-50 rounded-lg">
+                        {{ current_chapter.name }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-lg text-green-900 mb-2 font-['EB_Garamond']" for="requested_chapter">
+                        Requested Chapter
+                    </label>
+                    <select name="requested_chapter" id="requested_chapter" required
+                        class="mt-1 block w-full px-4 py-3 text-green-900 border-2 border-[#FFB649] focus:border-[#FFA635] focus:ring focus:ring-[#FFA635] focus:ring-opacity-50 bg-white rounded-lg shadow-sm transition duration-200">
+                        <option value="">Select Requested Chapter</option>
+                        {% for chapter in chapters %}
+                        {% if chapter != current_chapter %}
+                        <option value="{{ chapter.id }}">{{ chapter.name }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-lg text-green-900 mb-2 font-['EB_Garamond']" for="start_date">
+                            Start Date at New Room
+                        </label>
+                        <input type="date" name="start_date" id="start_date" required
+                            class="mt-1 block w-full px-4 py-3 text-green-900 border-2 border-[#FFB649] focus:border-[#FFA635] focus:ring focus:ring-[#FFA635] focus:ring-opacity-50 bg-white rounded-lg shadow-sm transition duration-200">
+                    </div>
+
+                    <div>
+                        <label class="block text-lg text-green-900 mb-2 font-['EB_Garamond']" for="end_date">
+                            End Date at New Room
+                        </label>
+                        <input type="date" name="end_date" id="end_date" required
+                            class="mt-1 block w-full px-4 py-3 text-green-900 border-2 border-[#FFB649] focus:border-[#FFA635] focus:ring focus:ring-[#FFA635] focus:ring-opacity-50 bg-white rounded-lg shadow-sm transition duration-200">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-lg text-green-900 mb-2 font-['EB_Garamond']" for="reason">
+                        Reason for Transfer
+                    </label>
+                    <textarea name="reason" id="reason" required rows="4"
+                        class="mt-1 block w-full px-4 py-3 text-green-900 border-2 border-[#FFB649] focus:border-[#FFA635] focus:ring focus:ring-[#FFA635] focus:ring-opacity-50 bg-white rounded-lg shadow-sm transition duration-200 resize-none"
+                        placeholder="Please explain why you want to transfer to another chapter..."></textarea>
+                </div>
+
+                <div class="flex items-start space-x-3">
+                    <div class="flex items-center h-5 mt-1">
+                        <input type="checkbox" name="acknowledgment" id="acknowledgment" required
+                            class="w-4 h-4 text-[#FFB649] border-2 border-[#FFB649] focus:ring-[#FFA635] rounded">
+                    </div>
+                    <label for="acknowledgment" class="text-sm text-gray-700">
+                        {{ acknowledgment_text }}
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-end space-x-4 pt-4">
+                    <a href="{% url 'dashboard:dashboard' %}"
+                        class="px-6 py-2.5 border-2 border-[#FFB649] text-green-900 font-medium rounded-lg hover:bg-[#fff9f0] focus:outline-none focus:ring-2 focus:ring-[#FFA635] focus:ring-opacity-50 transition duration-200">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                        class="px-6 py-2.5 bg-[#FFB649] text-green-900 font-medium rounded-lg hover:bg-[#FFA635] focus:outline-none focus:ring-2 focus:ring-[#FFA635] focus:ring-opacity-50 transition duration-200">
+                        Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

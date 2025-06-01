@@ -1,0 +1,86 @@
+<!-- Error Message -->
+<div id="errorMessage" class="hidden mb-2 text-xs text-red-500 text-right">
+    Please answer this question before proceeding
+</div>
+
+<div class="flex justify-between items-center pt-6 border-t border-gray-100">
+    <div class="space-x-3">
+        {% if current_step == 1 %}
+        <button 
+            type="submit"
+            name="action"
+            value="back_to_chapter"
+            class="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-200 flex items-center space-x-2 font-medium"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Back to Chapter Selection</span>
+        </button>
+        {% elif current_step > 1 %}
+        <button 
+            type="submit"
+            name="action"
+            value="previous"
+            formnovalidate
+            class="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-200 flex items-center space-x-2"
+        >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Previous</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <button 
+        type="submit"
+        name="action"
+        value="next"
+        {% if current_step == total_steps %}
+        onclick="return validateAndConfirm()"
+        {% else %}
+        onclick="return validateRequired()"
+        {% endif %}
+        class="px-6 py-2.5 bg-custom-orange text-white rounded-xl hover:bg-custom-orange-dark focus:outline-none focus:ring-2 focus:ring-orange-300 transition-all duration-200 flex items-center space-x-2 font-medium"
+    >
+        <span>
+            {% if current_step == total_steps %}
+                Submit Application
+            {% else %}
+                Next Question
+            {% endif %}
+        </span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+    </button>
+</div>
+
+<script>
+function showError() {
+    const errorMessage = document.getElementById('errorMessage');
+    errorMessage.classList.remove('hidden');
+    setTimeout(() => {
+        errorMessage.classList.add('hidden');
+    }, 5000); // Hide after 5 seconds
+}
+
+function validateRequired() {
+    {% if question.required and question.question_type != 'information' %}
+        const answer = document.querySelector('textarea[name="answer"]')?.value || document.querySelector('input[name="answer"]:checked')?.value;
+        if (!answer || answer.trim() === '') {
+            showError();
+            return false;
+        }
+    {% endif %}
+    return true;
+}
+
+function validateAndConfirm() {
+    if (!validateRequired()) {
+        return false;
+    }
+    return true;
+}
+</script> 

@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        {% if site_settings.favicon %}
+        <link rel="icon" type="image/png" href="{{ site_settings.favicon.url }}">
+        {% endif %}
+        <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+        <script src="https://unpkg.com/alpinejs" defer></script>
+        <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+
+        <title>{% block title %}{% endblock %}</title>
+    </head>
+    <body class="bg-[#fff9f0] font-['EB_Garamond']">
+        <nav class="py-4 px-8 flex justify-between items-center shadow-lg bg-[#006340]">
+            <a href="https://www.seoulnooks.org" class="flex items-center text-white hover:text-[#FFB649] transition duration-300">
+                {% if site_settings.logo %}
+                    <img src="{{ site_settings.logo.url }}" alt="Seoul Nooks Logo" class="h-10 mr-3">
+                {% endif %}
+                <span class="text-4xl font-extralight tracking-wider leading-none font-['Playfair_Display'] text-[#ffffff] hover:text-[#FFB649] transition duration-300">Seoul Nooks</span>
+            </a>
+
+            <div class="space-x-6">
+                {% if user.is_authenticated %}
+                    {% if is_coliver %}
+                        <a href="{% url 'dashboard:dashboard' %}" class="pt-2 pb-0.5 px-4 text-white hover:text-[#FFB649] transition duration-300 text-lg font-light tracking-wide">Dashboard</a>
+                    {% endif %}
+                    <a href="{% url 'logout' %}" class="pt-2 pb-0.5 px-4 text-white hover:text-[#FFB649] transition duration-300 text-lg font-light tracking-wide">Logout</a>
+                    {% if show_application_button %}
+                        {% if not has_any_applications and request.resolver_match.url_name != 'applications' %}
+                            <a href="{% url 'applications' %}" class="pt-2 pb-2 px-4 bg-[#FFB649] hover:bg-[#FFA635] rounded-lg text-green-900 transition duration-300 shadow-md -mb-1.5 text-lg font-light tracking-wide">New Application</a>
+                        {% elif has_draft_applications and request.resolver_match.url_name != 'applications_list' %}
+                            <a href="{% url 'applications_list' %}" class="pt-2 pb-2 px-4 bg-[#FFB649] hover:bg-[#FFA635] rounded-lg text-green-900 transition duration-300 shadow-md -mb-1.5 text-lg font-light tracking-wide">Applications</a>
+                        {% elif is_coliver and request.resolver_match.url_name not in 'applications,applications_list' %}
+                            <a href="{% url 'applications' %}" class="pt-2 pb-2 px-4 bg-[#FFB649] hover:bg-[#FFA635] rounded-lg text-green-900 transition duration-300 shadow-md -mb-1.5 text-lg font-light tracking-wide">New Application</a>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'join' %}" class="pt-2 pb-2 px-4 bg-[#FFB649] hover:bg-[#FFA635] rounded-lg text-green-900 transition duration-300 shadow-md -mb-1.5 text-lg font-light tracking-wide">Join Us!</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        {% block content %}
+        {% endblock %}
+    </body>
+</html>

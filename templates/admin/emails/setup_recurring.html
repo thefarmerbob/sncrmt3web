@@ -1,0 +1,105 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label='emails' %}">Emails</a>
+    &rsaquo; <a href="{% url 'admin:emails_emailtemplate_changelist' %}">Email templates</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div class="module aligned">
+    <h2>Template Preview</h2>
+    <div style="background: #f8f8f8; padding: 15px; border: 1px solid #ddd; margin-bottom: 20px;">
+        <p><strong>Subject:</strong> {{ template.subject }}</p>
+        <p><strong>Body:</strong></p>
+        <div style="white-space: pre-wrap; background: white; padding: 10px; border: 1px solid #ccc;">{{ template.body }}</div>
+        <p style="margin-top: 10px; font-size: 12px; color: #666;">
+            <em>Placeholders like {{first_name}}, {{last_name}}, {{email}} will be replaced with actual recipient data.</em>
+        </p>
+    </div>
+</div>
+
+<form method="post" action="{% url 'admin:process_recurring_setup' template.id %}">
+    {% csrf_token %}
+    
+    <div class="module aligned">
+        <h2>Recurring Email Configuration</h2>
+        
+        <div class="form-row">
+            <div>
+                <label for="name" class="required">Name for this recurring email:</label>
+                <input type="text" name="name" id="name" class="vTextField" required 
+                       placeholder="e.g., Weekly Newsletter, Monthly Update" style="width: 100%;">
+                <p class="help">Give this recurring email setup a descriptive name</p>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div>
+                <label for="recipients" class="required">Send to:</label>
+                <select name="recipients" id="recipients" class="vSelectField" required>
+                    {% for value, label in recipient_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <p class="help">Choose who should receive this recurring email</p>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div>
+                <label for="frequency" class="required">Frequency:</label>
+                <select name="frequency" id="frequency" class="vSelectField" required>
+                    {% for value, label in frequency_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <p class="help">How often should this email be sent</p>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div>
+                <label for="start_date" class="required">Start Date:</label>
+                <input type="date" name="start_date" id="start_date" class="vDateField" required 
+                       min="{% now 'Y-m-d' %}">
+                <p class="help">When should the first email be sent</p>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div>
+                <label for="start_time">Time:</label>
+                <input type="time" name="start_time" id="start_time" class="vTimeField" value="09:00">
+                <p class="help">What time should the emails be sent (24-hour format)</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="submit-row">
+        <input type="submit" value="Setup Recurring Email" class="default" />
+        <a href="{% url 'admin:emails_emailtemplate_changelist' %}" class="button cancel-link">Cancel</a>
+    </div>
+</form>
+
+<div class="module aligned" style="margin-top: 20px;">
+    <h2>How Recurring Emails Work</h2>
+    <ul style="margin-left: 20px;">
+        <li><strong>Daily:</strong> Email will be sent every day at the specified time</li>
+        <li><strong>Weekly:</strong> Email will be sent every 7 days from the start date</li>
+        <li><strong>Monthly:</strong> Email will be sent every 30 days from the start date</li>
+    </ul>
+    <p style="margin-top: 10px; font-size: 12px; color: #666;">
+        <em>Note: You can manually send any recurring email immediately from the "Recurring emails" section, 
+        and you can deactivate recurring emails at any time.</em>
+    </p>
+</div>
+{% endblock %} 
