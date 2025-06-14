@@ -1,0 +1,181 @@
+{% extends "core/base.html" %}
+
+{% block title %}Chapter Availability Matrix{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 my-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl text-green-900 font-['EB_Garamond']">Chapter Availability Matrix</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'applications' %}" class="px-4 py-1.5 bg-[#FFB649] hover:bg-[#FFA635] text-green-900 rounded-lg transition duration-300 text-sm">
+                New Application
+            </a>
+            <a href="{% url 'applications_list' %}" class="px-4 py-1.5 bg-green-900 hover:bg-green-800 text-[#FFB649] rounded-lg transition duration-300 text-sm">
+                My Applications
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Range Controls -->
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div class="flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-2">
+                <label class="text-sm text-gray-600">Start Date:</label>
+                <input type="date" id="start-date" value="{{ start_date|date:'Y-m-d' }}" 
+                       class="px-3 py-1 border border-gray-300 rounded text-sm">
+            </div>
+            <div class="flex items-center space-x-2">
+                <label class="text-sm text-gray-600">Days to show:</label>
+                <select id="days-to-show" class="px-3 py-1 border border-gray-300 rounded text-sm">
+                    <option value="14" {% if days_to_show == 14 %}selected{% endif %}>14 days</option>
+                    <option value="30" {% if days_to_show == 30 %}selected{% endif %}>30 days</option>
+                    <option value="60" {% if days_to_show == 60 %}selected{% endif %}>60 days</option>
+                    <option value="90" {% if days_to_show == 90 %}selected{% endif %}>90 days</option>
+                </select>
+            </div>
+            <div class="flex space-x-2">
+                <a href="?start_date={{ prev_start|date:'Y-m-d' }}&days={{ days_to_show }}" 
+                   class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm transition duration-300">
+                    ← Previous
+                </a>
+                <a href="?start_date={{ next_start|date:'Y-m-d' }}&days={{ days_to_show }}" 
+                   class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-sm transition duration-300">
+                    Next →
+                </a>
+                <button onclick="updateMatrix()" 
+                        class="px-3 py-1 bg-[#FFB649] hover:bg-[#FFA635] text-green-900 rounded text-sm transition duration-300">
+                    Update
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <h3 class="text-lg text-green-900 font-['EB_Garamond'] mb-3">Legend</h3>
+        <div class="flex flex-wrap gap-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-4 h-4 bg-green-200 border border-green-300 rounded"></div>
+                <span class="text-sm text-gray-700">Available</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="w-4 h-4 bg-red-200 border border-red-300 rounded"></div>
+                <span class="text-sm text-gray-700">Booked</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Availability Matrix -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <!-- Header with dates -->
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="sticky left-0 bg-gray-50 px-4 py-3 text-left text-sm font-medium text-gray-700 border-r border-gray-200 min-w-[200px]">
+                            Chapter
+                        </th>
+                        {% for date in date_range %}
+                        <th class="px-2 py-3 text-center text-xs text-gray-700 border-r border-gray-200 min-w-[50px]">
+                            <div class="font-medium">{{ date|date:'M j' }}</div>
+                            <div class="text-xs text-gray-500">{{ date|date:'D' }}</div>
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <!-- Body with chapters and availability -->
+                <tbody class="divide-y divide-gray-200">
+                    {% for row in matrix_data %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="sticky left-0 bg-white px-4 py-3 border-r border-gray-200 hover:bg-gray-50">
+                            <div class="text-sm font-medium text-gray-900">{{ row.chapter.name }}</div>
+                            {% if row.chapter.description %}
+                            <div class="text-xs text-gray-500 truncate max-w-[180px]">{{ row.chapter.description|truncatechars:50 }}</div>
+                            {% endif %}
+                        </td>
+                        {% for date_info in row.dates %}
+                        <td class="px-1 py-1 text-center border-r border-gray-200">
+                            <div class="w-8 h-8 mx-auto rounded cursor-pointer transition-all duration-200 flex items-center justify-center
+                                        {% if date_info.is_available %}
+                                            bg-green-200 hover:bg-green-300 border border-green-300
+                                        {% else %}
+                                            bg-red-200 hover:bg-red-300 border border-red-300
+                                        {% endif %}"
+                                 title="{% if date_info.is_available %}Available{% else %}Booked{% endif %} - {{ date_info.date|date:'M j, Y' }}"
+                                 data-chapter-id="{{ row.chapter.id }}"
+                                 data-date="{{ date_info.date|date:'Y-m-d' }}"
+                                 data-available="{{ date_info.is_available|yesno:'true,false' }}"
+                                 class="availability-cell">
+                                {% if date_info.is_available %}
+                                    <span class="text-green-700 text-xs">✓</span>
+                                {% else %}
+                                    <span class="text-red-700 text-xs">✗</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Total Chapters</h3>
+            <p class="text-2xl font-bold text-green-900">{{ matrix_data|length }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Date Range</h3>
+            <p class="text-sm text-gray-600">{{ start_date|date:'M j' }} - {{ end_date|date:'M j, Y' }}</p>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Days Shown</h3>
+            <p class="text-2xl font-bold text-green-900">{{ days_to_show }}</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateMatrix() {
+    const startDate = document.getElementById('start-date').value;
+    const daysToShow = document.getElementById('days-to-show').value;
+    const url = new URL(window.location);
+    url.searchParams.set('start_date', startDate);
+    url.searchParams.set('days', daysToShow);
+    window.location.href = url.toString();
+}
+
+// Use event delegation for availability cell clicks
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.availability-cell')) {
+        const cell = e.target.closest('.availability-cell');
+        const chapterId = cell.getAttribute('data-chapter-id');
+        const date = cell.getAttribute('data-date');
+        const isAvailable = cell.getAttribute('data-available') === 'true';
+        
+        if (isAvailable) {
+            // Redirect to applications page with pre-filled chapter and date
+            const url = new URL('{% url "applications" %}', window.location.origin);
+            url.searchParams.set('chapter', chapterId);
+            url.searchParams.set('date', date);
+            window.location.href = url.toString();
+        } else {
+            alert('This chapter is not available on ' + date);
+        }
+    }
+});
+
+// Auto-update on input change
+document.getElementById('start-date').addEventListener('change', function() {
+    // Optional: Auto-update when date changes
+});
+
+document.getElementById('days-to-show').addEventListener('change', function() {
+    // Optional: Auto-update when days selection changes
+});
+</script>
+
+{% endblock %} 

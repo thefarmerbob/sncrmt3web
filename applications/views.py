@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from django.db import models
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib import messages
 from django.utils.safestring import mark_safe
+from django.http import JsonResponse
+from django.urls import reverse
 
 from .forms import ApplicationDatesForm, ApplicationNameForm, ApplicationEditForm          
 from chapters.models import Chapter, ChapterBooking
@@ -55,6 +57,21 @@ def applications(request):
     short_stay_message = ShortStayWarning.get_active()
     pricing_settings = PricingSettings.get_settings().get_formatted_texts()
 
+    # Check for pre-filled data from availability matrix
+    prefill_chapter_id = request.GET.get('chapter')
+    prefill_date = request.GET.get('date')
+    
+    # Create initial form data
+    initial_data = {}
+    if prefill_date:
+        try:
+            parsed_date = datetime.strptime(prefill_date, '%Y-%m-%d').date()
+            initial_data['date_join'] = parsed_date
+            # Set a default checkout date (e.g., 30 days later)
+            initial_data['date_leave'] = parsed_date + timedelta(days=30)
+        except ValueError:
+            pass  # Ignore invalid date format
+
     if request.method == 'POST':
         # If we have an existing application, update it instead of creating a new one
         if application:
@@ -65,6 +82,21 @@ def applications(request):
         if form.is_valid():
             date_join = form.cleaned_data['date_join']
             date_leave = form.cleaned_data['date_leave']
+            
+            # Calculate stay duration
+            days_difference = (date_leave - date_join).days
+            
+            # If checking availability and stay is over 93 days, show message without chapters
+            if 'check_availability' in request.POST and days_difference > 93:
+                messages.warning(request, mark_safe('<i style="color: #FF69B4;">Please adjust your dates to 93 days or less to view available chapters. You can extend your stay after arrival if space is available. 🌸</i>'))
+                return render(request, 'applications/new_application.html', {
+                    'form': form,
+                    'application': application,
+                    'dates_selected': False,  # Don't show chapters
+                    'short_stay_message': short_stay_message,
+                    'pricing_settings': pricing_settings,
+                    'prefill_chapter_id': prefill_chapter_id
+                })
 
             # Get all chapters with availability status
             chapters_with_availability = get_available_chapters(date_join, date_leave)
@@ -91,6 +123,11 @@ def applications(request):
                     # Get pricing breakdown for this chapter
                     pricing_breakdown = temp_application.get_pricing_breakdown()
                     
+                    # Check if short-term pricing is being used
+                    is_short_term = (chapter.use_short_term_pricing and 
+                                    nights <= chapter.short_term_threshold_days and 
+                                    chapter.short_term_price_per_night > 0)
+                    
                     chapters_info.append({
                         'chapter': chapter,
                         'is_available': chapter_data['is_available'],
@@ -99,17 +136,20 @@ def applications(request):
                         'per_guest_cost': per_guest_cost,
                         'nights': nights,
                         'images': chapter.images.all(),
-                        'pricing_breakdown': pricing_breakdown
+                        'pricing_breakdown': pricing_breakdown,
+                        'is_short_term': is_short_term
                     })
 
-                return render(request, 'applications/new_application.html', {
+                context = {
                     'form': form,
                     'chapters_info': chapters_info,
                     'dates_selected': True,
                     'application': application,
                     'short_stay_message': short_stay_message,
-                    'pricing_settings': pricing_settings
-                })
+                    'pricing_settings': pricing_settings,
+                    'prefill_chapter_id': prefill_chapter_id  # Pass to template for auto-selection
+                }
+                return render(request, 'applications/new_application.html', context)
             
             # If continuing to next step
             else:
@@ -133,6 +173,8 @@ def applications(request):
                     request.session['current_question_index'] = 0
                     
                     application.chapter_id = chapter_id
+                    application.date_join = date_join
+                    application.date_leave = date_leave
                     application.save()
                     
                     # If we had existing answers and changed chapters, reassign them to the updated application
@@ -170,6 +212,11 @@ def applications(request):
                         # Get pricing breakdown for this chapter
                         pricing_breakdown = temp_application.get_pricing_breakdown()
                         
+                        # Check if short-term pricing is being used
+                        is_short_term = (chapter.use_short_term_pricing and 
+                                        nights <= chapter.short_term_threshold_days and 
+                                        chapter.short_term_price_per_night > 0)
+                        
                         chapters_info.append({
                             'chapter': chapter,
                             'is_available': chapter_data['is_available'],
@@ -178,41 +225,36 @@ def applications(request):
                             'per_guest_cost': per_guest_cost,
                             'nights': nights,
                             'images': chapter.images.all(),
-                            'pricing_breakdown': pricing_breakdown
+                            'pricing_breakdown': pricing_breakdown,
+                            'is_short_term': is_short_term
                         })
                     
-                    return render(request, 'applications/new_application.html', {
+                    context = {
                         'form': form,
                         'chapters_info': chapters_info,
                         'dates_selected': True,
                         'application': application,
                         'short_stay_message': short_stay_message,
-                        'pricing_settings': pricing_settings
-                    })
-
-        else:
-            return render(request, 'applications/new_application.html', {
-                'form': form,
-                'chapters_info': [],
-                'dates_selected': False,
-                'application': application,
-                'short_stay_message': short_stay_message,
-                'pricing_settings': pricing_settings
-            })
+                        'pricing_settings': pricing_settings,
+                        'prefill_chapter_id': prefill_chapter_id  # Pass to template for auto-selection
+                    }
+                    return render(request, 'applications/new_application.html', context)
     else:
+        # GET request - show the form
         if application:
-            form = ApplicationDatesForm(instance=application)
+            form = ApplicationDatesForm(instance=application, initial=initial_data)
         else:
-            form = ApplicationDatesForm()
+            form = ApplicationDatesForm(initial=initial_data)
 
-    return render(request, 'applications/new_application.html', {
+    context = {
         'form': form,
-        'chapters_info': [],
-        'dates_selected': False,
         'application': application,
         'short_stay_message': short_stay_message,
-        'pricing_settings': pricing_settings
-    })
+        'pricing_settings': pricing_settings,
+        'prefill_chapter_id': prefill_chapter_id,
+        'from_questions': request.GET.get('from_questions')  # Pass this to template
+    }
+    return render(request, 'applications/new_application.html', context)
 
 @login_required
 def available_chapters(request):
@@ -297,6 +339,8 @@ def application_step2(request):
             del request.session['current_question_index']
         if 'application_id' in request.session:
             del request.session['application_id']
+        if 'edit_questions' in request.session:
+            del request.session['edit_questions']
         application.status = 'Submitted'
         application.save()
         return redirect('application_success')
@@ -317,6 +361,7 @@ def application_step2(request):
             answer=''
         )
 
+    save_success = False
     if request.method == 'POST':
         action = request.POST.get('action', 'next')
         
@@ -331,21 +376,26 @@ def application_step2(request):
             # Only clear edit_questions flag, preserve current_question_index
             if 'edit_questions' in request.session:
                 del request.session['edit_questions']
-            return redirect('application_edit', pk=application.pk)
+            applications_url = reverse('applications') + '?from_questions=true'
+            return redirect(applications_url)
         
         # Save the current answer regardless of direction
         answer_text = request.POST.get('answer')
-        answer.answer = answer_text
-        answer.save()
+        if answer_text is not None:  # Save even if empty string
+            answer.answer = answer_text
+            answer.save()
         
         if action == 'previous':
             # Move to previous question
             request.session['current_question_index'] = max(0, current_question_index - 1)
+            return redirect('application_step2')
+        elif action == 'save':
+            # Stay on the same question and show a success message
+            save_success = True
         else:
             # Move to next question
             request.session['current_question_index'] = current_question_index + 1
-        
-        return redirect('application_step2')
+            return redirect('application_step2')
 
     total_questions = questions.count()
     progress = int((current_question_index / total_questions) * 100)
@@ -356,7 +406,8 @@ def application_step2(request):
         'answer': answer,
         'progress': progress,
         'current_step': current_question_index + 1,
-        'total_steps': total_questions
+        'total_steps': total_questions,
+        'save_success': save_success
     })
 
 @login_required
@@ -412,79 +463,33 @@ def edit_application(request, pk):
     
     if edit_questions:
         print("\n=== Processing question editing mode ===")
-        # Handle question editing similar to application_step2
-        questions = Question.objects.filter(is_active=True).order_by('order')
-        current_question_index = request.session.get('current_question_index', 0)
-        print(f"Current question index: {current_question_index}")
-        print(f"Total questions: {questions.count()}")
-        
-        # If we've edited all questions, clear session and redirect
-        if current_question_index >= questions.count():
-            print("Completed all questions, clearing session")
-            if 'current_question_index' in request.session:
-                del request.session['current_question_index']
-            if 'edit_questions' in request.session:
-                del request.session['edit_questions']
-            # Update application status to Submitted
-            application.status = 'Submitted'
-            application.save()
-            return redirect('application_detail', pk=application.pk)
-        
-        current_question = questions[current_question_index]
-        print(f"Current question: {current_question.text}")
-        
-        # Get or create answer for this question
-        answer, created = ApplicationAnswer.objects.get_or_create(
-            application=application,
-            question=current_question,
-            defaults={'answer': ''}
-        )
-        print(f"Answer {'created' if created else 'found'} for current question")
-
-        if request.method == 'POST':
-            action = request.POST.get('action', 'next')
-            print(f"POST action in questions mode: {action}")
-            
-            # Handle back to chapter selection
-            if action == 'back_to_chapter':
-                print("Going back to chapter selection")
-                answer_text = request.POST.get('answer')
-                if answer_text:
-                    answer.answer = answer_text
-                    answer.save()
-                
-                if 'edit_questions' in request.session:
-                    del request.session['edit_questions']
-                return redirect('application_edit', pk=application.pk)
-            
-            # Save the current answer regardless of direction
-            answer_text = request.POST.get('answer')
-            if answer_text:
-                answer.answer = answer_text
-                answer.save()
-                print(f"Saved answer: {answer_text}")
-            
-            if action == 'previous':
-                request.session['current_question_index'] = max(0, current_question_index - 1)
-                print(f"Moving to previous question: {request.session['current_question_index']}")
+        # Add support for reintroduction questions
+        if application.member_type == 'returning member' and application.wants_reintroduction:
+            reintro_questions = list(ReintroductionQuestion.objects.filter(is_active=True).order_by('order'))
+            reintro_answers = {a.question_id: a for a in ReintroductionAnswer.objects.filter(application=application) if a.answer}
+            last_answered_index = 0
+            for idx, q in enumerate(reintro_questions):
+                if q.id in reintro_answers:
+                    last_answered_index = idx
+            request.session['current_reintroduction_question_index'] = last_answered_index
+            return redirect('reintroduction_form')
+        elif application.member_type == 'returning member':
+            # For returning members who don't want reintroduction, go back to reintroduction question
+            return redirect('reintroduction_question')
+        else:
+            # Regular questions logic for new members
+            questions = Question.objects.filter(is_active=True).order_by('order')
+            answers = ApplicationAnswer.objects.filter(application=application)
+            answered_question_ids = set(a.question_id for a in answers)
+            first_unanswered_index = 0
+            for idx, q in enumerate(questions):
+                if q.id not in answered_question_ids or not answers.filter(question=q, answer__isnull=False).exists():
+                    first_unanswered_index = idx
+                    break
             else:
-                request.session['current_question_index'] = current_question_index + 1
-                print(f"Moving to next question: {request.session['current_question_index']}")
-            
-            return redirect('application_edit', pk=application.pk)
-
-        total_questions = questions.count()
-        progress = int((current_question_index / total_questions) * 100)
-        print(f"Rendering question form. Progress: {progress}%")
-
-        return render(request, 'applications/question_form.html', {
-            'application': application,
-            'question': current_question,
-            'answer': answer,
-            'progress': progress,
-            'current_step': current_question_index + 1,
-            'total_steps': total_questions
-        })
+                first_unanswered_index = questions.count() - 1 if questions.exists() else 0
+            request.session['current_question_index'] = first_unanswered_index
+            return redirect('application_step2')
     
     # Handle the chapter selection and basic info editing
     if request.method == 'POST':
@@ -516,8 +521,11 @@ def edit_application(request, pk):
                                 defaults={'answer': value}
                             )
                 
-                # Now save the application
+                # Save the application with updated dates
+                application.date_join = date_join
+                application.date_leave = date_leave
                 application.save()
+                print(f"Saved application with dates: {date_join} to {date_leave}")
                 
                 chapters_with_availability = get_available_chapters(date_join, date_leave)
                 nights = (date_leave - date_join).days
@@ -539,6 +547,11 @@ def edit_application(request, pk):
                     # Get pricing breakdown for this chapter
                     pricing_breakdown = temp_application.get_pricing_breakdown()
                     
+                    # Check if short-term pricing is being used
+                    is_short_term = (chapter.use_short_term_pricing and 
+                                    nights <= chapter.short_term_threshold_days and 
+                                    chapter.short_term_price_per_night > 0)
+                    
                     chapters_info.append({
                         'chapter': chapter,
                         'is_available': chapter_data['is_available'],
@@ -547,17 +560,19 @@ def edit_application(request, pk):
                         'per_guest_cost': per_guest_cost,
                         'nights': nights,
                         'images': chapter.images.all(),
-                        'pricing_breakdown': pricing_breakdown
+                        'pricing_breakdown': pricing_breakdown,
+                        'is_short_term': is_short_term
                     })
 
                 print(f"Rendering chapter selection with {len(chapters_info)} chapters")
-                return render(request, 'applications/edit_application.html', {
+                return render(request, 'applications/new_application.html', {
                     'form': form,
                     'application': application,
                     'chapters_info': chapters_info,
                     'dates_selected': True,
                     'short_stay_message': short_stay_message,
-                    'pricing_settings': pricing_settings
+                    'pricing_settings': pricing_settings,
+                    'is_edit': True
                 })
             
             # If continuing to questions
@@ -575,44 +590,45 @@ def edit_application(request, pk):
                                 defaults={'answer': value}
                             )
                 
-                # Now save the application
-                application.save()
-                print(f"Saved application: {application.pk}")
-                
                 # Get selected chapter
                 chapter_id = request.POST.get('chapter')
                 print(f"Selected chapter ID: {chapter_id}")
                 
                 if chapter_id:
                     application.chapter_id = chapter_id
-                    application.save()
-                    print(f"Updated application with chapter: {chapter_id}")
+                
+                # Save the application with all updates including dates
+                application.date_join = date_join
+                application.date_leave = date_leave
+                application.save()
+                print(f"Saved application with dates: {date_join} to {date_leave}")
+                
+                # Set up session for question editing
+                request.session['edit_questions'] = True
+                request.session['current_question_index'] = 0
+                request.session['application_id'] = application.pk
+                print("Session updated for questions:")
+                print(f"edit_questions: {request.session.get('edit_questions')}")
+                print(f"current_question_index: {request.session.get('current_question_index')}")
+                print(f"application_id: {request.session.get('application_id')}")
                 
                 # Check if this is a returning member and redirect to reintroduction question
                 if application.member_type == 'returning member':
                     return redirect('reintroduction_question')
                 else:
-                    # Set up session for question editing
-                    request.session['edit_questions'] = True
-                    request.session['current_question_index'] = 0
-                    request.session['application_id'] = application.pk
-                    print("Session updated for questions:")
-                    print(f"edit_questions: {request.session.get('edit_questions')}")
-                    print(f"current_question_index: {request.session.get('current_question_index')}")
-                    print(f"application_id: {request.session.get('application_id')}")
-                    
                     # Redirect to application_step2
                     print("Redirecting to application_step2")
                     return redirect('application_step2')
         else:
             print(f"Form validation failed: {form.errors}")
-            return render(request, 'applications/edit_application.html', {
+            return render(request, 'applications/new_application.html', {
                 'form': form,
                 'application': application,
                 'chapters_info': [],
                 'dates_selected': False,
                 'short_stay_message': short_stay_message,
-                'pricing_settings': pricing_settings
+                'pricing_settings': pricing_settings,
+                'is_edit': True
             })
     else:
         print("\n=== Initial GET request ===")
@@ -627,13 +643,14 @@ def edit_application(request, pk):
     
     print("Rendering initial edit form")
     print(f"Final session state: {dict(request.session)}")
-    return render(request, 'applications/edit_application.html', {
+    return render(request, 'applications/new_application.html', {
         'form': form,
         'application': application,
         'chapters_info': [],
         'dates_selected': False,
         'short_stay_message': short_stay_message,
-        'pricing_settings': pricing_settings
+        'pricing_settings': pricing_settings,
+        'is_edit': True
     })
 
 @login_required
@@ -751,9 +768,29 @@ def reintroduction_form(request):
             answer=''
         )
 
+    total_questions = questions.count()
+    progress = int((current_question_index / total_questions) * 100) if total_questions else 0
+
+    save_success = False
     if request.method == 'POST':
         action = request.POST.get('action', 'next')
-        
+
+        if action == 'save':
+            answer_text = request.POST.get('answer')
+            if answer_text is not None:
+                answer.answer = answer_text
+                answer.save()
+            save_success = True
+            return render(request, 'applications/reintroduction_form.html', {
+                'application': application,
+                'question': current_question,
+                'answer': answer,
+                'progress': progress,
+                'current_step': current_question_index + 1,
+                'total_steps': total_questions,
+                'save_success': save_success
+            })
+
         # Handle back to reintroduction question (Yes/No choice)
         if action == 'back_to_reintroduction_question':
             # Save the current answer only if provided (don't require it)
@@ -795,16 +832,15 @@ def reintroduction_form(request):
         else:
             # Save the current answer for next/submit actions
             answer_text = request.POST.get('answer')
-            answer.answer = answer_text
-            answer.save()
+            if answer_text:
+                answer.answer = answer_text
+                answer.save()
             
             # Move to next question
             request.session['current_reintroduction_question_index'] = current_question_index + 1
         
-        return redirect('reintroduction_form')
-
-    total_questions = questions.count()
-    progress = int((current_question_index / total_questions) * 100)
+        if action != 'save':
+            return redirect('reintroduction_form')
 
     return render(request, 'applications/reintroduction_form.html', {
         'application': application,
@@ -812,5 +848,73 @@ def reintroduction_form(request):
         'answer': answer,
         'progress': progress,
         'current_step': current_question_index + 1,
-        'total_steps': total_questions
+        'total_steps': total_questions,
+        'save_success': save_success
     })
+
+@login_required
+def availability_matrix(request):
+    """
+    Display a matrix showing chapter availability across dates.
+    Dates are shown as columns, chapters as rows.
+    """
+    # Get date range - default to next 30 days
+    start_date = request.GET.get('start_date')
+    if start_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    else:
+        start_date = date.today()
+    
+    # Default to showing 30 days
+    days_to_show = int(request.GET.get('days', 30))
+    end_date = start_date + timedelta(days=days_to_show - 1)
+    
+    # Generate date range
+    date_range = []
+    current_date = start_date
+    while current_date <= end_date:
+        date_range.append(current_date)
+        current_date += timedelta(days=1)
+    
+    # Get all chapters
+    chapters = Chapter.objects.all()
+    
+    # Build availability matrix
+    matrix_data = []
+    for chapter in chapters:
+        row_data = {
+            'chapter': chapter,
+            'dates': []
+        }
+        
+        for single_date in date_range:
+            # Check if chapter is booked on this date
+            is_booked = ChapterBooking.objects.filter(
+                chapter=chapter,
+                start_date__lte=single_date,
+                end_date__gt=single_date
+            ).exists()
+            
+            row_data['dates'].append({
+                'date': single_date,
+                'is_available': not is_booked,
+                'is_booked': is_booked
+            })
+        
+        matrix_data.append(row_data)
+    
+    # Navigation dates
+    prev_start = start_date - timedelta(days=days_to_show)
+    next_start = start_date + timedelta(days=days_to_show)
+    
+    context = {
+        'matrix_data': matrix_data,
+        'date_range': date_range,
+        'start_date': start_date,
+        'end_date': end_date,
+        'days_to_show': days_to_show,
+        'prev_start': prev_start,
+        'next_start': next_start,
+    }
+    
+    return render(request, 'applications/availability_matrix.html', context)

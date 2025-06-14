@@ -125,14 +125,11 @@ class Application(models.Model):
 
     def clean(self):
         super().clean()
-        if self.date_join and self.date_leave:
-            if self.date_leave <= self.date_join:
-                raise ValidationError('Departure date must be after arrival date.')
-            
-            # Check if stay duration exceeds 93 days
-            days_difference = (self.date_leave - self.date_join).days
-            if days_difference > 93:
-                raise ValidationError('Initial bookings are limited to 93 days (3 months). You can extend your stay after arrival if space is available.')
+        # Removed duplicate date validation to avoid double error messages
+        # if self.date_join and self.date_leave:
+        #     if self.date_leave <= self.date_join:
+        #         raise ValidationError('Departure date must be after arrival date.')
+        #     # Removed 93-day validation here
 
     def calculate_cost(self):
         if self.manual_cost is not None:
@@ -229,8 +226,104 @@ class Application(models.Model):
                         start_date=self.date_join,
                         end_date=self.date_leave
                     )
+                
+                # Create coliver and automatic payments when status changes to Onboarding
+                print(f"🎯 Application status changed to ONBOARDING for {self.first_name} {self.last_name}")
+                self._create_coliver_and_payments()
         
         super().save(*args, **kwargs)
+    
+    def _create_coliver_and_payments(self):
+        """Create coliver and automatic payments when application status changes to Onboarding"""
+        try:
+            from colivers.models import Coliver
+            from payments.models import AutomaticPaymentTemplate, AutomaticPayment
+            
+            # Create or update coliver - use arrival/departure dates for unique identification
+            coliver, coliver_created = Coliver.objects.get_or_create(
+                user=self.created_by,
+                first_name=self.first_name,
+                last_name=self.last_name,
+                email=self.email,
+                arrival_date=self.date_join,
+                departure_date=self.date_leave,
+                defaults={
+                    'chapter_name': self.chapter,
+                    'status': 'ONBOARDING',
+                    'manual_cost': self.manual_cost,
+                    'is_active': True
+                }
+            )
+            
+            if coliver_created:
+                print(f"✓ Created new coliver record for {coliver.first_name} {coliver.last_name}")
+            else:
+                print(f"⚠ Found existing coliver for {coliver.first_name} {coliver.last_name}")
+                # Update existing coliver with new application data
+                coliver.chapter_name = self.chapter
+                coliver.manual_cost = self.manual_cost
+                coliver.status = 'ONBOARDING'
+                coliver.is_active = True
+                coliver.save()
+                print(f"✓ Updated existing coliver with new application data")
+            
+            # Create automatic payments for this coliver
+            templates = AutomaticPaymentTemplate.objects.filter(
+                is_active=True, 
+                applies_to_all_colivers=True
+            )
+            
+            payment_count = 0
+            for template in templates:
+                try:
+                    # Check if payment already exists for this specific template and coliver
+                    existing_auto_payment = AutomaticPayment.objects.filter(
+                        template=template,
+                        coliver=coliver
+                    ).first()
+                    
+                    if existing_auto_payment:
+                        print(f"⚠ Payment already exists for template '{template.title}' and coliver {coliver.first_name} {coliver.last_name}")
+                        # Check if we need to update the existing payment with new application data
+                        payment = existing_auto_payment.payment
+                        if payment.status == 'requested':  # Only update if not yet processed
+                            new_amount = template.calculate_amount(coliver)
+                            new_due_date = template.calculate_due_date(coliver)
+                            
+                            # Update payment with recalculated values
+                            payment.amount = new_amount
+                            payment.due_date = new_due_date
+                            
+                            # Update description with new details
+                            payment.description = template.description_template.format(
+                                coliver_name=f"{coliver.first_name} {coliver.last_name}",
+                                chapter_name=coliver.chapter_name.name if coliver.chapter_name else "No Chapter",
+                                arrival_date=coliver.arrival_date.strftime('%Y-%m-%d') if coliver.arrival_date else "TBD",
+                                departure_date=coliver.departure_date.strftime('%Y-%m-%d') if coliver.departure_date else "TBD"
+                            )
+                            
+                            payment.save()
+                            print(f"✓ Updated existing payment '{template.title}' for {coliver.first_name} {coliver.last_name}")
+                            payment_count += 1
+                    else:
+                        # Create new automatic payment for this coliver
+                        payment = template.create_payment_for_coliver(coliver)
+                        if payment:
+                            payment_count += 1
+                            print(f"✓ Created new automatic payment '{template.title}' for {coliver.first_name} {coliver.last_name}")
+                        
+                except Exception as e:
+                    print(f"✗ Error creating/updating automatic payment '{template.title}' for {coliver.first_name} {coliver.last_name}: {e}")
+            
+            if payment_count > 0:
+                print(f"🎉 Successfully created/updated {payment_count} automatic payments for {coliver.first_name} {coliver.last_name}")
+            else:
+                print(f"⚠ No automatic payments were created/updated for {coliver.first_name} {coliver.last_name}")
+                
+        except Exception as e:
+            print(f"✗ Error in _create_coliver_and_payments: {e}")
+            import traceback
+            traceback.print_exc()
 
     def withdraw(self):
         """Withdraw the application."""

@@ -6,9 +6,14 @@
 <div class="container mx-auto px-4 my-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl text-green-900 font-['EB_Garamond']">My Applications</h1>
+        <div class="flex space-x-2">
+            <a href="{% url 'availability_matrix' %}" class="px-4 py-1.5 bg-green-900 hover:bg-green-800 text-[#FFB649] rounded-lg transition duration-300 text-sm">
+                View Availability
+            </a>
         <a href="{% url 'applications' %}" class="px-4 py-1.5 bg-[#FFB649] hover:bg-[#FFA635] text-green-900 rounded-lg transition duration-300 text-sm">
             New Application
         </a>
+        </div>
     </div>
 
     {% if applications %}

@@ -19,10 +19,11 @@ class PricingTierInline(admin.TabularInline):
 
 @admin.register(Chapter)
 class ChapterAdmin(admin.ModelAdmin):
-    list_display = ['name', 'cost_per_night', 'use_tiered_pricing', 'use_short_term_pricing', 'description_text_size']
-    list_filter = ['use_tiered_pricing', 'use_short_term_pricing']
+    list_display = ['name', 'cost_per_night', 'use_tiered_pricing', 'use_short_term_pricing', 'description_text_size', 'created_by']
+    list_filter = ['use_tiered_pricing', 'use_short_term_pricing', 'created_by']
     search_fields = ['name']
     inlines = [PricingTierInline, ChapterBookingsInline, ChapterImageInline]
+    exclude = ('created_by',)  # Exclude from form since it's set automatically
     
     fieldsets = (
         ('Basic Information', {
@@ -39,6 +40,11 @@ class ChapterAdmin(admin.ModelAdmin):
                           'when the stay duration is under the threshold.'
         }),
     )
+    
+    def save_model(self, request, obj, form, change):
+        if not change:  # Only for new objects
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
 
 @admin.register(PricingTier)
 class PricingTierAdmin(admin.ModelAdmin):

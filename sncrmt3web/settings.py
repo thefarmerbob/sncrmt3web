@@ -31,9 +31,9 @@ SECRET_KEY = 'django-insecure-u7_#sjz^i#+m4zjq5p^nkt2wn6qv@y+(==ygc=7*irq1m86oi3
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-RENDER = True
+RENDER = False  # Set to False for local development with SQLite
 
-ALLOWED_HOSTS = ['mysite-3c6s.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'mysite-3c6s.onrender.com']
 
 LOGIN_REDIRECT_URL = '/dashboard/applications/'
 LOGIN_URL = '/login/'
@@ -64,7 +64,6 @@ INSTALLED_APPS = [
     'todos',
     'chapter_transfers',
     'maintenance.apps.MaintenanceConfig',
-    'emails',
 ]
 
 MIDDLEWARE = [
@@ -111,14 +110,8 @@ WSGI_APPLICATION = 'sncrmt3web.wsgi.application'
 if not RENDER:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'db',
-            'CHARSET': 'utf8mb4',
-            'OPTIONS': {'charset': 'utf8mb4', "use_unicode": True},
-            'USER': 'root',
-            'PASSWORD': 'S4mplePassword#3m4r3u3(beta)',
-            'HOST': 'localhost',
-            'PORT': '3306',
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 else:

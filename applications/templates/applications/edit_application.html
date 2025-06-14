@@ -182,7 +182,7 @@
                                         {{ pricing_settings.note }}
                                     </p>
                                     <div class="mt-4">
-                                        <button onclick="hidePricingInfo()" 
+                                        <button type="button" onclick="hidePricingInfo()" 
                                                 class="text-sm font-medium text-gray-700 hover:text-gray-800 focus:outline-none transition-colors duration-200">
                                             Got it
                                         </button>
@@ -190,7 +190,7 @@
                                 </div>
                             </div>
                             <div class="flex-shrink-0">
-                                <button onclick="hidePricingInfo()" 
+                                <button type="button" onclick="hidePricingInfo()" 
                                         class="text-gray-400 hover:text-gray-500">
                                     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -253,7 +253,13 @@
                                             
                                             <div class="mt-4 p-4 bg-custom-orange-lighter rounded-xl space-y-2">
                                                 <div class="flex justify-between items-center">
-                                                    <span class="text-gray-600">Rate per night</span>
+                                                    <span class="text-gray-600">
+                                                        {% if chapter_info.is_short_term %}
+                                                            Short-term rate per night
+                                                        {% else %}
+                                                            Base price per night
+                                                        {% endif %}
+                                                    </span>
                                                     <span class="font-semibold text-green-800">₩{{ chapter_info.nightly_rate|floatformat:2 }}</span>
                                                 </div>
                                                 <div class="flex justify-between items-center">
@@ -488,18 +494,36 @@
 {% block extra_js %}
 <script>
 function checkStayDuration(event) {
+    // Check if this is a "Check Available Chapters" submission
+    const isCheckingAvailability = event.submitter && event.submitter.name === 'check_availability';
+    
+    // Only show warnings for "Check Available Chapters" button
+    if (!isCheckingAvailability) {
+        return true; // Allow all other form submissions to proceed normally
+    }
+    
     const dateJoin = new Date(document.querySelector('input[name="date_join"]').value);
     const dateLeave = new Date(document.querySelector('input[name="date_leave"]').value);
     
     if (dateJoin && dateLeave) {
+        // First check if dates are valid
+        if (dateLeave <= dateJoin) {
+            // Don't show any stay duration warnings for invalid dates
+            document.getElementById('stayWarningMessage').classList.add('hidden');
+            document.getElementById('longStayWarningMessage').classList.add('hidden');
+            return true; // Let the form validation handle the error
+        }
+
         const daysDifference = (dateLeave - dateJoin) / (1000 * 60 * 60 * 24);
         const minimumDays = parseInt(document.getElementById('applicationForm').getAttribute('data-minimum-days')) || 28;
         const maximumDays = parseInt(document.getElementById('applicationForm').getAttribute('data-maximum-days')) || 93;
         
         if (daysDifference < minimumDays) {
-            // Show short stay warning but don't prevent form submission
+            // Show short stay warning and prevent form submission until acknowledged
             document.getElementById('stayWarningMessage').classList.remove('hidden');
             document.getElementById('longStayWarningMessage').classList.add('hidden'); // Hide long stay warning if visible
+            event.preventDefault();
+            return false;
         } else if (daysDifference > maximumDays) {
             // Show long stay warning and prevent form submission
             document.getElementById('longStayWarningMessage').classList.remove('hidden');
@@ -519,10 +543,26 @@ function checkStayDuration(event) {
 
 function acknowledgeWarning() {
     document.getElementById('stayWarningMessage').classList.add('hidden');
+    // Submit form with check_availability action after acknowledging the warning
+    const form = document.getElementById('applicationForm');
+    const checkAvailabilityInput = document.createElement('input');
+    checkAvailabilityInput.type = 'hidden';
+    checkAvailabilityInput.name = 'check_availability';
+    checkAvailabilityInput.value = 'Check Available Chapters';
+    form.appendChild(checkAvailabilityInput);
+    form.submit();
 }
 
 function acknowledgeLongStayWarning() {
     document.getElementById('longStayWarningMessage').classList.add('hidden');
+    // Submit form with check_availability action after acknowledging the warning
+    const form = document.getElementById('applicationForm');
+    const checkAvailabilityInput = document.createElement('input');
+    checkAvailabilityInput.type = 'hidden';
+    checkAvailabilityInput.name = 'check_availability';
+    checkAvailabilityInput.value = 'Check Available Chapters';
+    form.appendChild(checkAvailabilityInput);
+    form.submit();
 }
 
 // Auto-hide success message and add date change listeners
@@ -599,6 +639,11 @@ document.querySelectorAll('input[name="chapter"]').forEach(radio => {
     radio.addEventListener('change', function() {
         document.getElementById('continueButton').disabled = false;
     });
+    
+    // Check if the radio button is already checked when the page loads
+    if (radio.checked) {
+        document.getElementById('continueButton').disabled = false;
+    }
 });
 </script>
 {% endblock %}

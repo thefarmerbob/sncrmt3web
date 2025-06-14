@@ -41,7 +41,9 @@ class Coliver(models.Model):
 
     def calculate_cost(self):
         """Calculate the total cost for the coliver's stay using tiered pricing."""
-        if self.manual_cost is not None:
+        # Only use manual_cost if it's set to a positive value
+        # If manual_cost is 0 or None, use automatic calculation
+        if self.manual_cost is not None and self.manual_cost > 0:
             return self.manual_cost
             
         if self.chapter_name and self.arrival_date and self.departure_date:

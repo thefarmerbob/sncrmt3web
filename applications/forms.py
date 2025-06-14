@@ -41,14 +41,9 @@ class ApplicationDatesForm(forms.ModelForm):
 
         if date_join and date_leave:
             if date_leave <= date_join:
-                raise forms.ValidationError('Departure date must be after arrival date.')
-            
-            # Check if stay duration exceeds 93 days
-            days_difference = (date_leave - date_join).days
-            if days_difference > 93:
-                raise forms.ValidationError(
-                    mark_safe('<i style="color: #FF69B4;"> Initial bookings are limited to 93 days (3 months). You can extend your stay after arrival if space is available. 🌸 </i>')
-                )
+                self.add_error(None, 'Departure date must be after arrival date.')
+                return cleaned_data
+            # Removed 93-day validation here
 
         return cleaned_data
 
@@ -134,20 +129,15 @@ class ApplicationEditForm(forms.ModelForm):
         date_leave = cleaned_data.get('date_leave')
 
         if not date_join:
-            raise forms.ValidationError('Arrival date is required')
+            self.add_error('date_join', 'Arrival date is required')
         if not date_leave:
-            raise forms.ValidationError('Departure date is required')
+            self.add_error('date_leave', 'Departure date is required')
 
         if date_join and date_leave:
             if date_leave <= date_join:
-                raise forms.ValidationError('Departure date must be after arrival date.')
-            
-            # Check if stay duration exceeds 93 days
-            days_difference = (date_leave - date_join).days
-            if days_difference > 93:
-                raise forms.ValidationError(
-                    mark_safe('<i style="color: #FF69B4;"> Initial bookings are limited to 93 days (3 months). You can extend your stay after arrival if space is available. 🌸 </i>')
-                )
+                self.add_error(None, 'Departure date must be after arrival date.')
+                return cleaned_data
+            # Removed 93-day validation here
 
         # Only validate question fields if we're not checking availability and not continuing to questions
         if 'check_availability' not in self.data and self.data.get('action') != 'continue_to_questions':

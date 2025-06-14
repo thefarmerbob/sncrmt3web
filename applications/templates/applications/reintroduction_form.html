@@ -100,26 +100,33 @@
 
                 <!-- Navigation Buttons -->
                 <div class="flex justify-between items-center pt-6 border-t border-gray-200">
-                        {% if current_step > 1 %}
-                            <button type="submit" name="action" value="previous" 
-                                    class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-orange transition-all duration-200">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                                Previous Question
+                        <div class="flex items-center space-x-2">
+                            {% if current_step > 1 %}
+                                <button type="submit" name="action" value="previous" 
+                                        class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-orange transition-all duration-200">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                    Previous Question
+                                </button>
+                            {% else %}
+                                <button type="submit" name="action" value="back_to_chapter" 
+                                        class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-orange transition-all duration-200">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                    Previous
+                                </button>
+                            {% endif %}
+                            <button type="submit"
+                                    name="action"
+                                    value="save"
+                                    class="py-2 px-4 bg-green-100 text-green-900 rounded-xl border border-green-300 hover:bg-green-200 ml-2">
+                                Save
                             </button>
-                        {% else %}
-                            <button type="submit" name="action" value="back_to_reintroduction_question" 
-                                    class="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-orange transition-all duration-200">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                                Previous
-                            </button>
-                        {% endif %}
-
+                        </div>
                         <button type="submit" name="action" value="next" 
-                                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-custom-orange hover:bg-custom-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-orange transition-all duration-200">
+                                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-custom-orange hover:bg-custom-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-custom-orange transition-all duration-200 ml-2">
                             {% if current_step == total_steps %}
                                 Submit Application
                                 <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,6 +152,11 @@
             </svg>
             <p class="text-sm font-medium">Your progress is automatically saved</p>
         </div>
+        {% if save_success %}
+            <div class="mt-4 p-3 rounded-xl bg-green-50 border border-green-200 text-green-800 text-center transition-all">
+                Answer saved!
+            </div>
+        {% endif %}
     </div>
 </div>
 
@@ -192,7 +204,7 @@
 <script>
 document.getElementById('reintroductionForm').addEventListener('submit', function(e) {
     // Allow going back without validation
-    if (e.submitter.value === 'previous' || e.submitter.value === 'back_to_reintroduction_question') {
+    if (e.submitter.value === 'previous' || e.submitter.value === 'back_to_chapter') {
         return true;
     }
 });

@@ -207,6 +207,8 @@ class Chapter(models.Model):
         return self.name
         
     def save(self, *args, **kwargs):
+        if not self.created_by_id:
+            raise ValueError("Chapter must have a created_by user.")
         if not self.created_by.is_staff:
             raise PermissionError("Only admin users can create chapters.")
         super().save(*args, **kwargs)
